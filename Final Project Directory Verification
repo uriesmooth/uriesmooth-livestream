@@ -1,0 +1,7 @@
+Urielsmooth-livestream/
+├── Assets/
+│   ├── Scripts/
+│   │   ├── UrielsmoothLiveController.cs    ← (Your retargeting & pipe loop script)
+│   │   └── AlphaRenderEnforcer.cs          ← (Camera transparent configuration)
+│   └── StreamingAssets/
+│       └── mediapipe_pipe.py    
