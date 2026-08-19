@@ -1,0 +1,9 @@
+[Step 1: Audio Engine] -> Launch Voice Clone App -> Confirm hardware mic routing.
+                                 |
+[Step 2: Tracking Base] -> Run mediapipe_bridge.py -> Camera frame loop starts locally.
+                                 |
+[Step 3: Engine Render] -> Launch Unity (LiveClone Scene) -> Verify alpha transmission.
+                                 |
+[Step 4: Stream Canvas] -> Launch OBS -> Confirm Spout2 Source & Virtual Cable input.
+                                 |
+[Step 5: Operational]   -> Check Frames (25-30fps target) -> GO LIVE.
