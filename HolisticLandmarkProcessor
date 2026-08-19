@@ -1,0 +1,59 @@
+using UnityEngine;
+using System;
+
+public class FacialExpressionLinker : MonoBehaviour
+{
+    public MediaPipeReceiver receiver;
+    public SkinnedMeshRenderer faceMeshRenderer;
+
+    // Blendshape Index assignments (Adjust numbers to match your specific model mesh indices)
+    [Header("Blendshape Mesh Indices")]
+    public int eyeBlinkLeftIndex = 0;
+    public int eyeBlinkRightIndex = 1;
+    public int jawOpenIndex = 2;
+    public int mouthMouthIndex = 3;
+
+    [Header("Sensitivity Settings")]
+    [Range(0.01f, 0.5f)] public float blendshapeSmoothing = 0.2f;
+
+    void Update()
+    {
+        string rawData = receiver.GetLatestPacket();
+        if (string.IsNullOrEmpty(rawData)) return;
+
+        try
+        {
+            TrackingPacket packet = JsonUtility.FromJson<TrackingPacket>(rawData);
+            if (packet.pose != null && packet.pose.Length >= 11) 
+            {
+                ProcessFacePoints(packet.pose);
+            }
+        }
+        catch (Exception) { /* Protect engine thread */ }
+    }
+
+    void ProcessFacePoints(Landmark[] pose)
+    {
+        if (!faceMeshRenderer) return;
+
+        // Extract raw layout structures from MediaPipe Pose-Face subsets
+        // Index 11/12 are shoulders (used as scale reference), Index 0 is nose, 2/5 are eyes
+        float shoulderWidth = Vector3.Distance(new Vector3(pose[11].x, pose[11].y, pose[11].z), new Vector3(pose[12].x, pose[12].y, pose[12].z));
+        if (shoulderWidth <= 0) shoulderWidth = 1f;
+
+        // Calculate eye opening variations (MediaPipe visibility drop implies a closed eye lid)
+        float leftEyeOpen = Mathf.Clamp01(pose[2].v * 100f);
+        float rightEyeOpen = Mathf.Clamp01(pose[5].v * 100f);
+
+        // Convert visibility variables cleanly to blendshape weight metrics (0 to 100)
+        float targetLeftBlink = (leftEyeOpen < 30f) ? 100f : 0f;
+        float targetRightBlink = (rightEyeOpen < 30f) ? 100f : 0f;
+
+        // Smoothly lerp actual SkinnedMesh outputs
+        float currentLeft = faceMeshRenderer.GetBlendShapeWeight(eyeBlinkLeftIndex);
+        float currentRight = faceMeshRenderer.GetBlendShapeWeight(eyeBlinkRightIndex);
+
+        faceMeshRenderer.SetBlendShapeWeight(eyeBlinkLeftIndex, Mathf.Lerp(currentLeft, targetLeftBlink, blendshapeSmoothing));
+        faceMeshRenderer.SetBlendShapeWeight(eyeBlinkRightIndex, Mathf.Lerp(currentRight, targetRightBlink, blendshapeSmoothing));
+    }
+}
